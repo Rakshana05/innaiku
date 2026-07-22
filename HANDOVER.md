@@ -98,7 +98,7 @@ To demonstrate the platform features without manually typing OTPs, click the **
 ## üìÅ Key File Map
 
 - [`backend/src/agent.py`](file:///c:/Users/Rakshana/Desktop/alliswell/backend/src/agent.py): Holds the FastAPI voice agent websocket endpoint and Gemini tools mapping.
-- [`backend/frontend/src/context/AuthContext.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/backend/frontend/src/context/AuthContext.jsx): Stores user state, login modes, and demo bypasses.
-- [`backend/frontend/src/components/dashboard/DealsDashboard.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/backend/frontend/src/components/dashboard/DealsDashboard.jsx): Customer tab dashboard listing all products and active/expired promotions.
-- [`backend/frontend/src/components/profile/VendorProfileTab.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/backend/frontend/src/components/profile/VendorProfileTab.jsx): Read-only view for vendors showing business credentials and proof document links.
-- [`backend/frontend/src/components/admin/AdminDashboard.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/backend/frontend/src/components/admin/AdminDashboard.jsx): Admin view for reviewing pending approvals and viewing directories.
+- [`frontend/src/context/AuthContext.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/frontend/src/context/AuthContext.jsx): Stores user state, login modes, and demo bypasses.
+- [`frontend/src/components/dashboard/DealsDashboard.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/frontend/src/components/dashboard/DealsDashboard.jsx): Customer tab dashboard listing all products and active/expired promotions.
+- [`frontend/src/components/profile/VendorProfileTab.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/frontend/src/components/profile/VendorProfileTab.jsx): Read-only view for vendors showing business credentials and proof document links.
+- [`frontend/src/components/admin/AdminDashboard.jsx`](file:///c:/Users/Rakshana/Desktop/alliswell/frontend/src/components/admin/AdminDashboard.jsx): Admin view for reviewing pending approvals and viewing directories.

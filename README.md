@@ -53,4 +53,4 @@ To demonstrate the platform's features, click the **🔑 Quick Demo Sign-In** bu
 *   `backend/src/agent.py`: Holds the main FastAPI WebSocket endpoint and Google Gemini + Sarvam AI Live voice pipeline configuration.
 *   `backend/supabase_schema.sql`: Contains the initial database table seeds, custom views, and triggers.
 *   `backend/rls_policies_setup.sql`: Custom Row-Level Security policies to protect data access.
-*   `backend/frontend/`: The frontend source folder built and served by the FastAPI backend.
+*   `frontend/`: The standalone React mobile frontend source folder, compiled and served by the FastAPI backend.

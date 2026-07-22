@@ -3,10 +3,10 @@
 set -o errexit
 
 echo "=== 1. Building React Mobile Frontend ==="
-cd frontend
+cd ../frontend
 npm install
 npm run build
-cd ..
+cd ../backend
 
 echo "=== 2. Installing Python Dependencies ==="
 pip install -r requirements.txt
