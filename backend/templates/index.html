@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innaikku AI - Real-time Voice Agent & Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #0b0a19;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary-glow: #6366f1;
+            --secondary-glow: #a855f7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-error: #ef4444;
+            --input-bg: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Beautiful glowing background radial circles */
+        .background-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .glow-left {
+            background: var(--primary-glow);
+            top: -10%;
+            left: -10%;
+            animation: pulse-glow-1 15s infinite alternate;
+        }
+
+        .glow-right {
+            background: var(--secondary-glow);
+            bottom: -10%;
+            right: -10%;
+            animation: pulse-glow-2 15s infinite alternate;
+        }
+
+        @keyframes pulse-glow-1 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, 60px) scale(1.15); }
+        }
+
+        @keyframes pulse-glow-2 {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-60px, -60px) scale(1.1); }
+        }
+
+        /* Nav Header */
+        header {
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .logo-group h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #a5b4fc, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-group p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-success);
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-error);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--accent-error);
+        }
+
+        /* Screen Wrapper */
+        .screen {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            z-index: 5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Auth Form Card */
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 450px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        .auth-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .auth-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        .role-switch {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 3px;
+            margin-bottom: 25px;
+        }
+
+        .role-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 9px;
+            transition: all 0.3s ease;
+        }
+
+        .role-btn.active {
+            color: var(--text-main);
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        }
+
+        .auth-submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            margin-top: 10px;
+        }
+
+        .auth-submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .auth-submit-btn:active {
+            transform: translateY(1px);
+        }
+
+        .auth-footer {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary-glow);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main Dashboard Screen */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphic Panel Card */
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Voice Agent Styling inside Panel */
+        .agent-header {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .agent-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .visualizer-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .outer-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            animation: rotate-dashed 20s linear infinite;
+        }
+
+        @keyframes rotate-dashed {
+            100% { transform: rotate(360deg); }
+        }
+
+        .glow-ring {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0) 70%);
+            transition: all 0.5s ease;
+        }
+
+        .state-pulse {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.25);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+        }
+
+        .mic-button {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.35);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.04);
+            box-shadow: 0 12px 30px rgba(124, 58, 237, 0.5);
+        }
+
+        .mic-button svg {
+            width: 38px;
+            height: 38px;
+            fill: var(--text-main);
+        }
+
+        /* Voice State Animations */
+        .panel.listening .state-pulse {
+            animation: ping-pulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+            opacity: 1;
+        }
+
+        .panel.speaking .glow-ring {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.55) 0%, rgba(99, 102, 241, 0) 70%);
+            transform: scale(1.25);
+            animation: speak-pulse 1s ease-in-out infinite alternate;
+        }
+
+        .panel.querying .glow-ring {
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0) 70%);
+            transform: scale(1.15);
+            animation: query-pulse 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes ping-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            70%, 100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        @keyframes speak-pulse {
+            0% { transform: scale(1.1); }
+            100% { transform: scale(1.3); }
+        }
+
+        @keyframes query-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            box-shadow: 0 0 6px var(--text-muted);
+        }
+
+        .panel.connected .status-dot { background: var(--accent-success); box-shadow: 0 0 10px var(--accent-success); }
+        .panel.listening .status-dot { background: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+        .panel.speaking .status-dot { background: var(--secondary-glow); box-shadow: 0 0 10px var(--secondary-glow); }
+        .panel.querying .status-dot { background: var(--accent-warning); box-shadow: 0 0 10px var(--accent-warning); }
+
+        /* Console Stream */
+        .log-section {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 6px;
+        }
+
+        .log-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.8rem;
+        }
+
+        .log-item {
+            border-left: 2px solid var(--border-color);
+            padding-left: 8px;
+            color: var(--text-muted);
+        }
+
+        .log-item.system { border-color: var(--primary-glow); color: #cbd5e1; }
+        .log-item.user { border-color: #3b82f6; color: #93c5fd; }
+        .log-item.bot { border-color: var(--secondary-glow); color: #e9d5ff; }
+        .log-item.tool { border-color: var(--accent-warning); color: #fef08a; }
+
+        /* Table Styling */
+        .panel h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #e2e8f0;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+        }
+
+        /* Demo Seeder Badge */
+        .seeder-banner {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .seeder-text {
+            font-size: 0.8rem;
+            color: #c7d2fe;
+            line-height: 1.4;
+        }
+
+        .seeder-btn {
+            background: var(--primary-glow);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .seeder-btn:hover {
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Grid forms for additions */
+        .inline-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .inline-form input, .inline-form select {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-glow);
+            border-color: var(--primary-glow);
+        }
+
+        .badge-role {
+            text-transform: capitalize;
+            font-weight: bold;
+            color: var(--secondary-glow);
+        }
+
+        /* Alert notifications */
+        .alert {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .alert.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            display: block;
+        }
+        .alert.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #a7f3d0;
+            display: block;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* SIMPLIFIED PROFILE SWITCHER & BUBBLE CHAT STYLES             */
+        /* ------------------------------------------------------------- */
+        
+        .profile-dropdown {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .profile-dropdown:hover {
+            border-color: var(--primary-glow);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .profile-dropdown option {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .captions-container {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .captions-header {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .clear-captions-btn {
+            background: transparent;
+            border: none;
+            color: var(--accent-error);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+        }
+
+        .clear-captions-btn:hover {
+            opacity: 1;
+        }
+
+        .captions-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 180px;
+        }
+
+        .caption-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .caption-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+
+        .user-caption .caption-label {
+            color: var(--primary-glow);
+        }
+
+        .bot-caption .caption-label {
+            color: var(--secondary-glow);
+        }
+
+        .caption-text {
+            font-size: 1.05rem;
+            line-height: 1.5;
+            font-weight: 500;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .caption-text.empty {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .status-ticker {
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border-color);
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Courier New', Courier, monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-glow glow-left"></div>
+    <div class="background-glow glow-right"></div>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo-group">
+            <h1>Innaikku AI</h1>
+            <p>Regional voice offers assistant with Supabase Portal</p>
+        </div>
+        <div class="user-status" id="header-user-status">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <label for="profile-select" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Active Profile:</label>
+                <select id="profile-select" class="profile-dropdown" onchange="switchProfile(this.value)">
+                    <option value="customer1">🙋‍♂️ Customer 1 (7010085714)</option>
+                    <option value="customer2">🙋‍♀️ Customer 2 - Priya (+91 9876543211)</option>
+                    <option value="customer3">🙋‍♂️ Customer 3 - Karthik (+91 9876543212)</option>
+                    <option value="vendor">🏪 Vendor (+91 9999999999)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Portal / Dashboard Screen (Visible by default) -->
+    <main class="screen" id="portal-screen">
+        <div class="dashboard-container">
+            
+            <!-- LEFT PANEL: Voice Assistant Control -->
+            <div class="panel" id="agent-panel">
+                <div class="agent-header">
+                    <h3>Innaikku AI Voice Agent</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                        Talk in Tamil, English, or Hindi
+                    </p>
+                </div>
+
+                <!-- Visualizer Ring -->
+                <div class="visualizer-wrapper">
+                    <div class="outer-ring"></div>
+                    <div class="glow-ring"></div>
+                    <div class="state-pulse"></div>
+                    
+                    <button class="mic-button" id="mic-btn" onclick="toggleVoiceSession()">
+                        <!-- Mic Icon -->
+                        <svg id="mic-icon" viewBox="0 0 24 24">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.42 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-2z"/>
+                        </svg>
+                        <!-- Stop Icon -->
+                        <svg id="stop-icon" viewBox="0 0 24 24" style="display: none;">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="text-align: center;">
+                    <div class="status-badge">
+                        <span class="status-dot"></span>
+                        <span id="status-text">Disconnected</span>
+                    </div>
+                </div>
+
+                <!-- Voice Captions Console -->
+                <div class="captions-container" id="captions-container">
+                    <div class="captions-header">
+                        <span>🎙️ Live Captions & Logs</span>
+                        <button class="clear-captions-btn" onclick="clearCaptions()">Reset</button>
+                    </div>
+                    
+                    <div class="captions-body">
+                        <!-- User Captions -->
+                        <div class="caption-block user-caption">
+                            <span class="caption-label">You Spoke</span>
+                            <div class="caption-text empty" id="user-caption-text">...waiting for speech...</div>
+                        </div>
+
+                        <!-- Bot Captions -->
+                        <div class="caption-block bot-caption">
+                            <span class="caption-label">Agent Response</span>
+                            <div class="caption-text empty" id="bot-caption-text">...waiting for response...</div>
+                        </div>
+                    </div>
+
+                    <!-- Database & System logs ticker -->
+                    <div class="status-ticker" id="status-ticker">
+                        System ready. Tap Mic to start.
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Dynamic Role-Specific Dashboard -->
+            <div class="right-column-panel">
+                
+                <!-- Demo database seeder widget (shows only if items catalog is empty) -->
+                <div class="seeder-banner hidden" id="demo-seeder-widget">
+                    <div class="seeder-text">
+                        <strong>💡 Setup Demo Data:</strong> No items or shops found in Supabase. Seed a default shop and products to test wishlist constraints immediately!
+                    </div>
+                    <button class="seeder-btn" onclick="seedSampleData()">Seed Database</button>
+                </div>
+
+                <!-- CUSTOMER DASHBOARD -->
+                <div class="panel hidden" id="customer-dashboard">
+                    <h3>
+                        <span>My Wishlist</span>
+                        <span style="font-size: 0.8rem; font-weight: normal; color: var(--accent-success);">Live Sync Enabled</span>
+                    </h3>
+                    <div class="table-wrapper">
+                        <table id="wishlist-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Seller Shop</th>
+                                    <th>Added Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wishlist-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state hidden" id="wishlist-empty">
+                            No items in your wishlist. Try asking the agent: <br>
+                            <em>"Add a smart watch to my wishlist"</em>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">
+                        <span>🔥 Active Shop Offers (Available Today Only)</span>
+                        <span class="user-badge" style="background:rgba(16,185,129,0.15); color:var(--accent-success); border-color:rgba(16,185,129,0.3); font-size:0.75rem; font-weight:normal;">Live Today</span>
+                    </h3>
+                    <div class="table-wrapper">
+                        <table id="customer-offers-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Discount</th>
+                                    <th>Sale Price</th>
+                                    <th>Seller Shop</th>
+                                    <th>Validity</th>
+                                    <th>Tagline</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customer-offers-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state hidden" id="customer-offers-empty">
+                            No active discount offers found for today.
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">Local Catalog (Products Listed by Vendors)</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+                        The agent will only wishlist items currently present in this catalog:
+                    </p>
+                    <div class="table-wrapper">
+                        <table id="customer-catalog-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Shop</th>
+                                    <th>Base Price</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customer-catalog-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VENDOR DASHBOARD -->
+                <div class="panel hidden" id="vendor-dashboard">
+                    <h3>My Shop & Inventory</h3>
+                    <div class="table-wrapper">
+                        <table id="vendor-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Offer Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendor-items-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state hidden" id="vendor-items-empty">
+                            You haven't added any products to your shop.
+                        </div>
+                    </div>
+
+                    <!-- Add product form -->
+                    <div style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Add New Product to Shop</h4>
+                        <form id="add-product-form" onsubmit="handleAddProduct(event)">
+                            <div class="inline-form">
+                                <input type="text" id="new-item-name" required placeholder="Item Name (e.g. Smart Watch)">
+                                <select id="new-item-category">
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Groceries">Groceries</option>
+                                    <option value="Home Appliances">Home Appliances</option>
+                                    <option value="Clothing">Clothing</option>
+                                </select>
+                                <input type="number" step="0.01" id="new-item-price" required placeholder="Price (e.g. 2500)">
+                            </div>
+                            <button type="submit" class="action-btn" style="margin-top: 10px;">Add Item</button>
+                        </form>
+                    </div>
+
+                    <!-- Create Offer Form -->
+                    <div style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Create Discount Offer on Product</h4>
+                        <form id="add-offer-form" onsubmit="handleCreateOffer(event)">
+                            <div class="inline-form">
+                                <select id="offer-item-select" required>
+                                    <option value="">Select Item from Inventory...</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <input type="number" step="0.1" min="0" max="100" id="offer-discount" required placeholder="Discount % (e.g. 15)">
+                                <input type="text" id="offer-tagline" placeholder="Tagline (e.g. Weekend Sale!)">
+                            </div>
+                            <button type="submit" class="action-btn" style="margin-top: 10px;">Create Offer</button>
+                        </form>
+                    </div>
+
+                    <!-- Wishlist demand counts -->
+                    <h3 style="margin-top: 40px;">
+                        <span>Wishlist Demand Analytics</span>
+                    </h3>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+                        This list shows how many customers have wishlisted items in your catalog:
+                    </p>
+                    <div class="table-wrapper">
+                        <table id="vendor-demand-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Shop Name</th>
+                                    <th>Wishlist Count</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendor-demand-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="empty-state hidden" id="vendor-demand-empty">
+                            No customer demand registered yet for your shop.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Global State variables
+        let supabaseClient = null;
+        let currentUser = null;
+        let currentProfile = null;
+        let vendorShop = null;
+
+        // WebSocket & Audio Session variables
+        let ws = null;
+        let audioContext = null;
+        let processorNode = null;
+        let microphoneStream = null;
+        let audioPlayer = null;
+        let isConnected = false;
+
+        // Initialize connection
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initSupabase();
+            // Default to customer profile
+            await switchProfile('customer');
+        });
+
+        // Fetch credentials dynamically from FastAPI backend /config endpoint
+        async function initSupabase() {
+            try {
+                const configRes = await fetch('/config');
+                const config = await configRes.json();
+                
+                if (config.supabase_url && config.supabase_anon_key) {
+                    supabaseClient = supabase.createClient(config.supabase_url, config.supabase_anon_key);
+                    console.log("Supabase Client initialized successfully via credentials.");
+                } else {
+                    addMessageToChat("Error: Supabase configs not available. Make sure they are set in backend .env.", "system");
+                }
+            } catch (err) {
+                console.error("Failed to fetch Supabase config:", err);
+                addMessageToChat("Failed to initialize database client.", "system");
+            }
+        }
+
+        // Switch Active Profile (Toggled from top-right dropdown)
+        async function switchProfile(roleKey) {
+            if (isConnected) stopVoiceSession();
+            
+            if (roleKey === 'customer' || roleKey === 'customer1') {
+                currentUser = { id: '5611ff6a-ab21-4752-bf5f-4018bd211c43', phone: '7010085714' };
+                currentProfile = { role: 'customer', name: 'Customer 1' };
+                addMessageToChat("System: Switched to <strong>Customer 1</strong> (7010085714)", "system");
+            } else if (roleKey === 'customer2') {
+                currentUser = { id: '22222222-2222-2222-2222-222222222223', phone: '+919876543211' };
+                currentProfile = { role: 'customer', name: 'Customer 2 (Priya)' };
+                addMessageToChat("System: Switched to <strong>Customer 2 - Priya</strong> (+91 9876543211)", "system");
+            } else if (roleKey === 'customer3') {
+                currentUser = { id: '22222222-2222-2222-2222-222222222224', phone: '+919876543212' };
+                currentProfile = { role: 'customer', name: 'Customer 3 (Karthik)' };
+                addMessageToChat("System: Switched to <strong>Customer 3 - Karthik</strong> (+91 9876543212)", "system");
+            } else {
+                currentUser = { id: '00000000-0000-0000-0000-000000000000', phone: '+919999999999' };
+                currentProfile = { role: 'vendor', name: 'Vendor Shop' };
+                addMessageToChat("System: Switched to <strong>Vendor Profile</strong> (+91 9999999999)", "system");
+            }
+            
+            document.getElementById('profile-select').value = roleKey;
+            await loginSuccess(currentUser);
+        }
+
+        async function loginSuccess(user) {
+            currentUser = user;
+            
+            if (currentProfile.role === 'vendor') {
+                document.getElementById('vendor-dashboard').classList.remove('hidden');
+                document.getElementById('customer-dashboard').classList.add('hidden');
+                await loadVendorData();
+            } else {
+                document.getElementById('customer-dashboard').classList.remove('hidden');
+                document.getElementById('vendor-dashboard').classList.add('hidden');
+                await loadCustomerData();
+            }
+
+            // Check if Seeder is needed
+            checkSeederState();
+        }
+
+        // --- DATABASE SEEDER LOGIC ---
+        async function checkSeederState() {
+            if (!supabaseClient) return;
+            const { count } = await supabaseClient.from('items').select('*', { count: 'exact', head: true });
+            if (count === 0) {
+                document.getElementById('demo-seeder-widget').classList.remove('hidden');
+            } else {
+                document.getElementById('demo-seeder-widget').classList.add('hidden');
+            }
+        }
+
+        async function seedSampleData() {
+            if (!supabaseClient || !currentUser) return;
+            
+            let targetOwnerId = currentUser.id;
+            if (currentProfile.role === 'customer') {
+                targetOwnerId = '00000000-0000-0000-0000-000000000000';
+                await supabaseClient.from('profiles').upsert({
+                    id: targetOwnerId,
+                    phone: '+919999999999',
+                    role: 'vendor',
+                    is_approved: true
+                });
+            }
+
+            const { data: shopData } = await supabaseClient.from('shops').upsert({
+                id: '11111111-1111-1111-1111-111111111111',
+                owner_id: targetOwnerId,
+                name: 'Hosur Electronics Hub',
+                owner_name: 'S. Murugan',
+                location: 'Denkanikottai Road, Hosur'
+            }).select().single();
+
+            if (shopData) {
+                // Seed standard products
+                await supabaseClient.from('items').upsert([
+                    { id: '33333333-3333-3333-3333-333333333333', shop_id: shopData.id, name: 'iPhone 15', category: 'Electronics', price: 79999 },
+                    { id: '44444444-4444-4444-4444-444444444444', shop_id: shopData.id, name: 'Organic Apples', category: 'Groceries', price: 180 },
+                    { id: '55555555-5555-5555-5555-555555555555', shop_id: shopData.id, name: 'Mixie Grinder', category: 'Home Appliances', price: 3499 },
+                    { id: '66666666-6666-6666-6666-666666666666', shop_id: shopData.id, name: 'Smart Watch', category: 'Electronics', price: 2999 }
+                ]);
+
+                console.log("Seeding complete!");
+                document.getElementById('demo-seeder-widget').classList.add('hidden');
+                
+                if (currentProfile.role === 'vendor') {
+                    await loadVendorData();
+                } else {
+                    await loadCustomerData();
+                }
+            }
+        }
+
+        // --- CUSTOMER DASHBOARD FETCHERS ---
+        async function loadCustomerData() {
+            if (!supabaseClient || !currentUser) return;
+            
+            // 1. Fetch Wishlist items for active customer
+            const { data: wishlists, error: wError } = await supabaseClient
+                .from('wishlists')
+                .select('*, items(*, shops(*))')
+                .eq('customer_id', currentUser.id);
+
+            const tbody = document.getElementById('wishlist-tbody');
+            tbody.innerHTML = '';
+            
+            if (wishlists && wishlists.length > 0) {
+                document.getElementById('wishlist-empty').classList.add('hidden');
+                wishlists.forEach(w => {
+                    const row = document.createElement('tr');
+                    const itemName = w.items?.name || 'Unknown Item';
+                    const category = w.items?.category || 'General';
+                    const shopName = w.items?.shops?.name || 'Vendor Shop';
+                    const date = new Date(w.created_at).toLocaleDateString();
+
+                    row.innerHTML = `
+                        <td><strong>${itemName}</strong></td>
+                        <td>${category}</td>
+                        <td>${shopName}</td>
+                        <td>${date}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                document.getElementById('wishlist-empty').classList.remove('hidden');
+            }
+
+            // 2. Fetch Active Shop Offers (Available TODAY Only)
+            const { data: offers, error: oError } = await supabaseClient
+                .from('active_offers_by_shop')
+                .select('*');
+
+            const offersTbody = document.getElementById('customer-offers-tbody');
+            offersTbody.innerHTML = '';
+            
+            const now = new Date();
+            const todayOffers = (offers || []).filter(o => {
+                if (o.offer_status === 'live') return true;
+                if (o.start_time && o.end_time) {
+                    const start = new Date(o.start_time);
+                    const end = new Date(o.end_time);
+                    return start <= now && end >= now;
+                }
+                return false;
+            });
+            
+            if (todayOffers.length > 0) {
+                document.getElementById('customer-offers-empty').classList.add('hidden');
+                todayOffers.forEach(o => {
+                    const row = document.createElement('tr');
+                    const origPrice = o.sale_price && o.discount_pct ? (parseFloat(o.sale_price) / (1 - parseFloat(o.discount_pct)/100)).toFixed(2) : '';
+                    row.innerHTML = `
+                        <td><strong>${o.item_name}</strong></td>
+                        <td><span style="color:var(--accent-success); font-weight:bold;">${parseFloat(o.discount_pct)}% OFF</span></td>
+                        <td><strong>₹${parseFloat(o.sale_price)}</strong> ${origPrice ? `<span style="font-size:0.75rem; text-decoration:line-through; color:var(--text-muted);">(Orig: ₹${origPrice})</span>` : ''}</td>
+                        <td>${o.shop_name} (${o.location || 'Hosur'})</td>
+                        <td><span class="user-badge" style="background:rgba(16,185,129,0.15); color:var(--accent-success); border-color:rgba(16,185,129,0.3); padding:2px 8px; font-size:0.75rem;">⚡ Available Today</span></td>
+                        <td><span style="font-style:italic; color:var(--text-muted);">${o.description || 'Special Today Deal!'}</span></td>
+                    `;
+                    offersTbody.appendChild(row);
+                });
+            } else {
+                document.getElementById('customer-offers-empty').classList.remove('hidden');
+            }
+
+            // 3. Fetch Catalog Items for Customers to view what's available
+            const { data: catalog } = await supabaseClient
+                .from('items')
+                .select('*, shops(*)');
+            
+            const catBbody = document.getElementById('customer-catalog-tbody');
+            catBbody.innerHTML = '';
+            if (catalog && catalog.length > 0) {
+                catalog.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.name}</td>
+                        <td>${item.category}</td>
+                        <td>${item.shops?.name || 'Vendor Shop'}</td>
+                        <td>₹${item.price}</td>
+                    `;
+                    catBbody.appendChild(row);
+                });
+            } else {
+                catBbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Catalog is currently empty.</td></tr>';
+            }
+        }
+
+        // --- VENDOR DASHBOARD FETCHERS ---
+        async function loadVendorData() {
+            if (!supabaseClient || !currentUser) return;
+
+            // Fetch vendor shop details
+            const { data: shop } = await supabaseClient
+                .from('shops')
+                .select('*')
+                .eq('owner_id', currentUser.id)
+                .single();
+
+            if (!shop) {
+                const { data: newShop } = await supabaseClient.from('shops').insert({
+                    owner_id: currentUser.id,
+                    name: 'Hosur Electronics Hub',
+                    owner_name: 'S. Murugan',
+                    location: 'Denkanikottai Road, Hosur'
+                }).select().single();
+                vendorShop = newShop;
+            } else {
+                vendorShop = shop;
+            }
+
+            if (!vendorShop) return;
+
+            // 1. Fetch Inventory Items & check their offers
+            const { data: items } = await supabaseClient
+                .from('items')
+                .select('*, offers(*)')
+                .eq('shop_id', vendorShop.id);
+
+            const tbody = document.getElementById('vendor-items-tbody');
+            tbody.innerHTML = '';
+
+            // Populate Create Offer select list
+            const select = document.getElementById('offer-item-select');
+            select.innerHTML = '<option value="">Select Item from Inventory...</option>';
+
+            if (items && items.length > 0) {
+                document.getElementById('vendor-items-empty').classList.add('hidden');
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    let offerStatus = '<span style="color:var(--text-muted);">No Offer</span>';
+                    if (item.offers && item.offers.discount_pct) {
+                        offerStatus = `<span style="color:var(--accent-success); font-weight:bold;">${parseFloat(item.offers.discount_pct)}% OFF (₹${parseFloat(item.offers.sale_price)})</span>`;
+                    }
+                    row.innerHTML = `
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.category}</td>
+                        <td>₹${item.price}</td>
+                        <td>${offerStatus}</td>
+                    `;
+                    tbody.appendChild(row);
+
+                    // Add to dropdown selector for offers
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = `${item.name} (₹${item.price})`;
+                    select.appendChild(opt);
+                });
+            } else {
+                document.getElementById('vendor-items-empty').classList.remove('hidden');
+            }
+
+            // 2. Fetch Wishlist count analytics (Demand count)
+            const { data: demand } = await supabaseClient
+                .from('item_wishlist_counts')
+                .select('*')
+                .eq('shop_id', vendorShop.id);
+
+            const demandTbody = document.getElementById('vendor-demand-tbody');
+            demandTbody.innerHTML = '';
+
+            if (demand && demand.length > 0) {
+                document.getElementById('vendor-demand-empty').classList.add('hidden');
+                demand.forEach(d => {
+                    const row = document.createElement('tr');
+                    const color = d.wishlist_count > 0 ? 'var(--accent-success)' : 'var(--text-muted)';
+                    row.innerHTML = `
+                        <td><strong>${d.item_name}</strong></td>
+                        <td>${d.shop_name}</td>
+                        <td><span style="font-weight:700; color:${color}; font-size:1.1rem;">${d.wishlist_count}</span> user(s)</td>
+                    `;
+                    demandTbody.appendChild(row);
+                });
+            } else {
+                document.getElementById('vendor-demand-empty').classList.remove('hidden');
+            }
+        }
+
+        async function handleAddProduct(event) {
+            event.preventDefault();
+            if (!supabaseClient || !vendorShop) return;
+
+            const name = document.getElementById('new-item-name').value;
+            const category = document.getElementById('new-item-category').value;
+            const price = parseFloat(document.getElementById('new-item-price').value);
+
+            const { data, error } = await supabaseClient.from('items').insert({
+                shop_id: vendorShop.id,
+                name: name,
+                category: category,
+                price: price
+            });
+
+            if (!error) {
+                document.getElementById('add-product-form').reset();
+                await loadVendorData();
+                checkSeederState();
+            } else {
+                alert("Error adding item: " + error.message);
+            }
+        }
+
+        async function handleCreateOffer(event) {
+            event.preventDefault();
+            if (!supabaseClient || !vendorShop) return;
+
+            const itemId = document.getElementById('offer-item-select').value;
+            const discount = parseFloat(document.getElementById('offer-discount').value);
+            const tagline = document.getElementById('offer-tagline').value || '';
+            if (!itemId) return;
+            
+            // Get original price
+            const { data: item } = await supabaseClient.from('items').select('price').eq('id', itemId).single();
+            if (!item) return;
+            const salePrice = item.price * (1 - (discount / 100));
+            
+            const nowDt = new Date();
+            const endDt = new Date(nowDt.getTime() + 24 * 60 * 60 * 1000);
+
+            // Upsert the offer (since item_id is unique)
+            const { data, error } = await supabaseClient.from('offers').upsert({
+                item_id: itemId,
+                discount_pct: discount,
+                sale_price: salePrice,
+                description: tagline,
+                start_time: nowDt.toISOString(),
+                end_time: endDt.toISOString()
+            }, { on_conflict: 'item_id' });
+            
+            if (!error) {
+                document.getElementById('add-offer-form').reset();
+                await loadVendorData();
+                addMessageToChat("System: Discount offer created successfully for the product (Valid Today).", "system");
+            } else {
+                alert("Error creating offer: " + error.message);
+            }
+        }
+
+        // --- CHAT DIALOGUE FUNCTIONS ---
+        let currentBotSpeech = "";
+
+        function updateCaption(text, type) {
+            if (type === "user") {
+                const el = document.getElementById("user-caption-text");
+                if (el) {
+                    el.textContent = text;
+                    el.classList.remove("empty");
+                }
+                // Clear bot speech for new turn
+                currentBotSpeech = "";
+                const botEl = document.getElementById("bot-caption-text");
+                if (botEl) {
+                    botEl.textContent = "...thinking...";
+                    botEl.classList.add("empty");
+                }
+            } else if (type === "bot") {
+                const el = document.getElementById("bot-caption-text");
+                if (el) {
+                    currentBotSpeech += (currentBotSpeech ? " " : "") + text;
+                    el.textContent = currentBotSpeech;
+                    el.classList.remove("empty");
+                }
+            } else if (type === "tool") {
+                const el = document.getElementById("status-ticker");
+                if (el) {
+                    el.innerHTML = `⚙️ <strong>Database Action</strong>: ${text}`;
+                }
+            } else {
+                const el = document.getElementById("status-ticker");
+                if (el) {
+                    el.textContent = text;
+                }
+            }
+        }
+
+        function addMessageToChat(text, type = "system") {
+            updateCaption(text, type);
+        }
+
+        function clearCaptions() {
+            currentBotSpeech = "";
+            const userEl = document.getElementById("user-caption-text");
+            const botEl = document.getElementById("bot-caption-text");
+            const statusEl = document.getElementById("status-ticker");
+            if (userEl) {
+                userEl.textContent = "...waiting for speech...";
+                userEl.classList.add("empty");
+            }
+            if (botEl) {
+                botEl.textContent = "...waiting for response...";
+                botEl.classList.add("empty");
+            }
+            if (statusEl) {
+                statusEl.textContent = "System ready. Tap Mic to start.";
+            }
+        }
+
+        function addLog(text, type = "system") {
+            updateCaption(text, type);
+        }
+
+        // ==========================================
+        // VOICE AGENT PIPECAT WEBSOCKET LOGIC
+        // ==========================================
+        
+        // Resampler removed - utilizing native browser sampling rate.
+
+        class AudioQueuePlayer {
+            constructor(sampleRate = 16000) {
+                this.sampleRate = sampleRate;
+                this.audioCtx = null;
+                this.nextStartTime = 0;
+            }
+            isBufferPlaying() {
+                if (!this.audioCtx) return false;
+                return this.audioCtx.currentTime < this.nextStartTime;
+            }
+            init() {
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                this.nextStartTime = 0;
+            }
+            playChunk(int16Array) {
+                if (!this.audioCtx) this.init();
+                if (this.audioCtx.state === 'suspended') {
+                    this.audioCtx.resume();
+                }
+                const float32 = new Float32Array(int16Array.length);
+                for (let i = 0; i < int16Array.length; i++) {
+                    float32[i] = int16Array[i] / 32768.0;
+                }
+                const buffer = this.audioCtx.createBuffer(1, float32.length, this.sampleRate);
+                buffer.copyToChannel(float32, 0);
+                const source = this.audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(this.audioCtx.destination);
+                const currentTime = this.audioCtx.currentTime;
+                if (this.nextStartTime < currentTime) {
+                    this.nextStartTime = currentTime;
+                }
+                source.start(this.nextStartTime);
+                this.nextStartTime += buffer.duration;
+            }
+            stop() {
+                this.nextStartTime = 0;
+                if (this.audioCtx) {
+                    this.audioCtx.close().catch(e => console.error(e));
+                    this.audioCtx = null;
+                }
+            }
+        }
+
+        function setVisualState(state) {
+            const card = document.getElementById("agent-panel");
+            const text = document.getElementById("status-text");
+
+            card.classList.remove("connected", "listening", "speaking", "querying");
+            
+            if (state === "disconnected") {
+                text.textContent = "Disconnected";
+                document.getElementById("mic-icon").style.display = "block";
+                document.getElementById("stop-icon").style.display = "none";
+            } else {
+                document.getElementById("mic-icon").style.display = "none";
+                document.getElementById("stop-icon").style.display = "block";
+
+                if (state === "connected") {
+                    card.classList.add("connected");
+                    text.textContent = "Connected";
+                } else if (state === "listening") {
+                    card.classList.add("listening");
+                    text.textContent = "Listening...";
+                } else if (state === "speaking") {
+                    card.classList.add("speaking");
+                    text.textContent = "Speaking...";
+                } else if (state === "querying") {
+                    card.classList.add("querying");
+                    text.textContent = "Database Processing...";
+                } else if (state === "thinking") {
+                    card.classList.add("connected");
+                    text.textContent = "Thinking...";
+                }
+            }
+        }
+
+        async function toggleVoiceSession() {
+            if (isConnected) {
+                stopVoiceSession();
+            } else {
+                await startVoiceSession();
+            }
+        }
+
+        async function startVoiceSession() {
+            if (!currentUser || !currentProfile) return;
+            
+            addMessageToChat(`Connecting voice channel (Mode: ${currentProfile.role.toUpperCase()})...`, "system");
+            
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const host = window.location.host;
+            
+            const wsUrl = `${protocol}//${host}/ws?mode=${currentProfile.role}&user_id=${currentUser.id}&phone=${encodeURIComponent(currentUser.phone || '')}`;
+            
+            ws = new WebSocket(wsUrl);
+            ws.binaryType = "arraybuffer";
+
+            ws.onopen = async () => {
+                isConnected = true;
+                addMessageToChat("WebSocket voice stream open. Connecting mic...", "system");
+                setVisualState("connected");
+                audioPlayer = new AudioQueuePlayer();
+                await setupMicrophone();
+            };
+
+            ws.onmessage = async (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    const int16Array = new Int16Array(event.data);
+                    setVisualState("speaking");
+                    audioPlayer.playChunk(int16Array);
+
+                    clearTimeout(window.speakTimeout);
+                    window.speakTimeout = setTimeout(() => {
+                        if (isConnected) setVisualState("listening");
+                    }, 850);
+                } else {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.event === "tool_calling") {
+                            setVisualState("querying");
+                            addMessageToChat(`[${msg.tool}]: ${JSON.stringify(msg.args)}`, "tool");
+                        } else if (msg.event === "user_transcription") {
+                            addMessageToChat(msg.text, "user");
+                            setVisualState("thinking");
+                        } else if (msg.event === "bot_transcription") {
+                            addMessageToChat(msg.text, "bot");
+                        } else if (msg.event === "wishlist_updated" || msg.event === "catalog_updated" || msg.event === "offer_updated" || msg.event === "shop_updated") {
+                            let syncMsg = "⭐ System: Data synced.";
+                            if (msg.event === "wishlist_updated") {
+                                syncMsg = "⭐ System: Wishlist updated.";
+                            } else if (msg.event === "catalog_updated") {
+                                syncMsg = "⭐ System: Shop catalog updated.";
+                            } else if (msg.event === "offer_updated") {
+                                syncMsg = "⭐ System: Discount offer updated.";
+                            } else if (msg.event === "shop_updated") {
+                                syncMsg = "⭐ System: Shop details updated.";
+                            }
+                            addMessageToChat(syncMsg, "system");
+                            if (currentProfile.role === 'customer') {
+                                await loadCustomerData();
+                            } else {
+                                await loadVendorData();
+                            }
+                        }
+                    } catch (e) {
+                        addMessageToChat(`Event: ${event.data}`, "system");
+                    }
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error(err);
+                addMessageToChat("Voice session WebSocket error.", "system");
+            };
+
+            ws.onclose = () => {
+                addMessageToChat("Voice session finished.", "system");
+                stopVoiceSession();
+            };
+        }
+
+        async function setupMicrophone() {
+            try {
+                // Request a native 16000Hz sample rate directly from the browser context
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                
+                microphoneStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                const source = audioContext.createMediaStreamSource(microphoneStream);
+                const bufferSize = 2048;
+                processorNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+                processorNode.onaudioprocess = (e) => {
+                    if (!isConnected) return;
+                    if (audioPlayer && audioPlayer.isBufferPlaying()) return;
+                    
+                    const inputBuffer = e.inputBuffer.getChannelData(0);
+                    
+                    // Directly convert float32 to int16 since the stream is natively sampled at 16000Hz
+                    const pcm16Data = new Int16Array(inputBuffer.length);
+                    for (let i = 0; i < inputBuffer.length; i++) {
+                        let val = inputBuffer[i] * 32767;
+                        pcm16Data[i] = Math.max(-32768, Math.min(32767, val));
+                    }
+
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(pcm16Data.buffer);
+                    }
+                };
+
+                source.connect(processorNode);
+                processorNode.connect(audioContext.destination);
+
+                addMessageToChat("Voice streaming active. Speak Tamil, English or Hindi...", "system");
+                setVisualState("listening");
+
+            } catch (err) {
+                addMessageToChat(`Microphone error: ${err.message}`, "system");
+                stopVoiceSession();
+            }
+        }
+
+        function stopVoiceSession() {
+            if (!isConnected) return;
+            isConnected = false;
+
+            addMessageToChat("Stopping voice stream...", "system");
+            
+            if (microphoneStream) {
+                microphoneStream.getTracks().forEach(track => track.stop());
+                microphoneStream = null;
+            }
+            if (processorNode) {
+                processorNode.disconnect();
+                processorNode = null;
+            }
+            if (audioContext) {
+                audioContext.close().catch(e => console.error(e));
+                audioContext = null;
+            }
+            if (audioPlayer) {
+                audioPlayer.stop();
+                audioPlayer = null;
+            }
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+
+            setVisualState("disconnected");
+            addMessageToChat("Stream closed.", "system");
+        }
+    </script>
+</body>
+</html>
