@@ -38,16 +38,6 @@ SARVAM_API_KEY=your-sarvam-ai-subscription-key
 
 ---
 
-## 🧪 Demo Test Phone Numbers
-To demonstrate the platform's features, click the **🔑 Quick Demo Sign-In** button on the login screen and toggle between these pre-configured user credentials:
-
-*   **System Admin**: Phone `0000000000` (can approve pending shops and inspect directories).
-*   **Customer**: Phone `+919876543211` (can browse products, manage wishlists, and chat with the AI shopping advisor).
-*   **Approved Vendor**: Phone `+919999999999` (has a verified shop; can add products, daily offers, and see demand metrics).
-*   **Pending Vendor**: Phone `+919999999901` (mock credentials showing submitted address details in read-only card layout).
-
----
-
 ## 📁 Key Directories
 
 *   `backend/src/agent.py`: Holds the main FastAPI WebSocket endpoint and Google Gemini + Sarvam AI Live voice pipeline configuration.
